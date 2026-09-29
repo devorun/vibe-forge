@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vibe forge · Forge your viber in 3D</title>
+<meta name="description" content="Design, animate and level up your vibe vibers character in 3D. Export a 1080px PFP or a spinning GIF. Fan-made for the vibe/vibe community.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='5' y='3' width='22' height='18' rx='2' fill='%2333d6c4' stroke='%23111' stroke-width='2'/%3E%3Crect x='8' y='8' width='7' height='6' fill='%23ff8a78' stroke='%23111' stroke-width='1.5'/%3E%3Crect x='17' y='8' width='7' height='6' fill='%23ff8a78' stroke='%23111' stroke-width='1.5'/%3E%3Crect x='10' y='21' width='12' height='8' fill='%2333d6c4' stroke='%23111' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0e0b;
+    --panel: #151812;
+    --line: #2a2f25;
+    --line-hi: #4a5240;
+    --text: #eef0e6;
+    --muted: #8d9486;
+    --lime: #d4ff3a;
+    --gold: #ffc940;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font-family: "Space Grotesk", system-ui, sans-serif; }
+  body { min-height: 100vh; }
+  a { color: inherit; }
+  header {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 14px 24px; border-bottom: 1px solid var(--line);
+  }
+  .brand { font-weight: 700; letter-spacing: -0.02em; font-size: 19px; text-decoration: none; }
+  .brand span { color: var(--lime); }
+  .nav { display: flex; gap: 8px; align-items: center; }
+  .tag {
+    font: 600 11px/1 "JetBrains Mono", monospace; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); border: 1px solid var(--line); padding: 7px 10px; border-radius: 999px; text-decoration: none;
+  }
+  a.tag:hover { border-color: var(--line-hi); color: var(--text); }
+  .hero { max-width: 1320px; margin: 0 auto; padding: 22px 24px 0; }
+  .hero h2 { margin: 0; font-size: clamp(26px, 4vw, 40px); letter-spacing: -0.035em; line-height: 1.05; }
+  .hero h2 em { font-style: normal; color: var(--lime); }
+  .hero p { margin: 8px 0 0; color: var(--muted); max-width: 640px; line-height: 1.5; }
+  main {
+    display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(340px, 1fr);
+    gap: 20px; padding: 18px 24px 28px; max-width: 1320px; margin: 0 auto;
+  }
+  .stage {
+    position: relative; border-radius: 20px; overflow: hidden; border: 1px solid var(--line);
+    aspect-ratio: 1 / 1; width: 100%; max-width: calc(100vh - 32px); justify-self: center;
+    align-self: start; position: sticky; top: 16px;
+  }
+  .stage canvas { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
+  .stage canvas:active { cursor: grabbing; }
+  .lvl-badge {
+    position: absolute; left: 14px; top: 14px; background: #0c0e0bcc; border: 1px solid #ffffff22;
+    padding: 8px 12px; border-radius: 12px; font: 600 13px "JetBrains Mono", monospace; backdrop-filter: blur(6px);
+  }
+  .lvl-badge b { color: var(--lime); font-size: 20px; margin-left: 4px; }
+  .lvl-badge.gold b { color: var(--gold); }
+  .anims {
+    position: absolute; left: 14px; bottom: 14px; right: 14px; display: flex; gap: 6px; flex-wrap: wrap;
+  }
+  .anims button { background: #0c0e0bcc; backdrop-filter: blur(6px); border-color: #ffffff22; }
+  .anims button.on { background: var(--lime); color: #0c0e0b; border-color: var(--lime); }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 20px;
+    display: flex; flex-direction: column; gap: 16px; align-self: start; min-width: 0;
+  }
+  .eyebrow { font: 600 11px "JetBrains Mono", monospace; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  h1 { margin: 6px 0 2px; font-size: 28px; letter-spacing: -0.03em; line-height: 1.05; }
+  .sub { color: var(--muted); font-size: 14px; }
+  .group { display: flex; flex-direction: column; gap: 7px; }
+  .group-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .group-head span { font-size: 13px; color: var(--text); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    border: 1px solid var(--line); background: transparent; color: var(--text); border-radius: 9px;
+    padding: 6px 10px; font: 500 13px "Space Grotesk", sans-serif; cursor: pointer;
+  }
+  .chip:hover { border-color: var(--line-hi); }
+  .chip.on { border-color: var(--lime); box-shadow: inset 0 0 0 1px var(--lime); }
+  .chip.sw { width: 30px; height: 30px; padding: 0; border: 2px solid #111; border-radius: 8px; box-shadow: 0 0 0 1px var(--line); }
+  .chip.sw.on { box-shadow: 0 0 0 2px var(--lime); }
+  .chip.sw.glass { background: linear-gradient(135deg, #7fe8d8aa, #ffffff55) !important; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  button {
+    font: 600 13px "Space Grotesk", sans-serif; color: var(--text); background: transparent;
+    border: 1px solid var(--line); border-radius: 10px; padding: 9px 13px; cursor: pointer;
+    transition: border-color .15s, background .15s, color .15s;
+  }
+  button:hover { border-color: var(--line-hi); }
+  button:disabled { opacity: .55; cursor: progress; }
+  button.primary { background: var(--lime); color: #0c0e0b; border-color: var(--lime); }
+  button.primary:hover { filter: brightness(1.05); }
+  .slider { display: flex; align-items: center; gap: 12px; }
+  input[type=range] { flex: 1; accent-color: var(--lime); }
+  .slider output { font: 600 14px "JetBrains Mono", monospace; min-width: 56px; text-align: right; }
+  .dna {
+    font: 500 12px "JetBrains Mono", monospace; background: #0c0e0b; border: 1px solid var(--line);
+    border-radius: 10px; padding: 10px 12px; word-break: break-all; color: var(--lime);
+  }
+  details { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+  summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+  pre { font: 12px/1.5 "JetBrains Mono", monospace; color: #c9cfbf; overflow-x: auto; margin: 10px 0 0; white-space: pre; }
+  .note { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  hr { border: 0; border-top: 1px solid var(--line); margin: 0; }
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0;
+    background: var(--lime); color: #0c0e0b; font-weight: 600; padding: 10px 16px; border-radius: 10px;
+    transition: opacity .2s, transform .2s; pointer-events: none; z-index: 10;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  footer { max-width: 1320px; margin: 0 auto; padding: 0 24px 32px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; padding: 14px 16px 24px; }
+    .hero, footer { padding-left: 16px; padding-right: 16px; }
+    header { padding: 12px 16px; }
+    .stage { position: relative; top: 0; }
+    .nav .hide-sm { display: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="./">vibe<span>/</span>forge</a>
+  <nav class="nav">
+    <a class="tag hide-sm" href="https://testnet.vibevibe.fun/vibe-vibers" target="_blank" rel="noopener">vibe vibers ↗</a>
+    <span class="tag">Fan-made</span>
+  </nav>
+</header>
+
+<section class="hero">
+  <h2>Forge your <em>viber</em> in 3D.</h2>
+  <p>Mix traits, watch it move, level it up to 20. Grab a 1080px PFP or a spinning GIF, and share a link that rebuilds your exact viber.</p>
+</section>
+
+<main>
+  <div class="stage" id="stage">
+    <div class="lvl-badge" id="lvlBadge">LVL<b id="lvlBadgeNum">7</b></div>
+    <div class="anims" id="anims">
+      <button data-anim="idle" class="on">Idle</button>
+      <button data-anim="wave">Wave</button>
+      <button data-anim="dance">Dance</button>
+      <button data-anim="quant">Quant mode</button>
+    </div>
+  </div>
+
+  <aside class="panel">
+    <div>
+      <div class="eyebrow">Forge Pass · unminted</div>
+      <h1 id="name">Quant Hatter</h1>
+      <div class="sub" id="flavor"></div>
+    </div>
+
+    <div class="row">
+      <button class="primary" id="reroll">🎲 Randomize</button>
+      <button id="png">PNG 1080</button>
+      <button id="gif">GIF 360°</button>
+      <button id="share">Copy link</button>
+      <button id="tweet">Post on X</button>
+    </div>
+
+    <hr>
+    <div id="editor" style="display:flex;flex-direction:column;gap:14px"></div>
+
+    <div class="group">
+      <div class="group-head"><div class="eyebrow">Level</div><span>aura grows · gold at 15 · crown at 20</span></div>
+      <div class="slider">
+        <input type="range" id="lvl" min="1" max="20" value="7">
+        <output id="lvlOut">LVL 7</output>
+      </div>
+    </div>
+
+    <hr>
+    <div class="group">
+      <div class="eyebrow">On-chain DNA</div>
+      <div class="dna" id="dna"></div>
+    </div>
+
+    <details>
+      <summary>tokenURI metadata preview</summary>
+      <pre id="meta"></pre>
+    </details>
+
+    <div class="note">A Forge Pass stores only these DNA bytes on-chain; this page rebuilds the 3D viber from them. Minting on Robinhood Chain Testnet is coming next.</div>
+  </aside>
+</main>
+
+<footer>
+  Fan-made by the community for vibe/vibe. Not affiliated with or endorsed by the vibe/vibe team. Character style inspired by the vibe vibers collection.
+  Testnet only: nothing here has monetary value.
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+  "gifenc": "https://cdn.jsdelivr.net/npm/gifenc@1.0.3/dist/gifenc.esm.js"
+} }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GIFEncoder, quantize, applyPalette } from "gifenc";
+
+// ---------- trait tables (index = byte stored on-chain) ----------
+const BODY = [
+  ["Teal", 0x33d6c4], ["Brown", 0x6b4630], ["Silver", 0xa6aab0], ["Orange", 0xf08a3c],
+  ["Purple", 0x7a5cc8], ["Pink", 0xe98bb2], ["Gold", 0xd9a93a], ["Blue", 0x3a6fd8],
+  ["Cream", 0xe8dfc8], ["Charcoal", 0x3b3f45], ["Red", 0xd9483b], ["Mint", 0x8fe3a6],
+  ["Glass", 0x7fe8d8],
+];
+const GLASS = BODY.findIndex(([n]) => n === "Glass");
+const ACCENT = [
+  ["Cream", 0xd9d4c6], ["Coral", 0xff8a78], ["Mint", 0x9ff0a8], ["Lime", 0xc8ff3a],
+  ["Turquoise", 0x3ee0d0], ["Red", 0xe0453a], ["Black", 0x1b1c1e], ["Gold", 0xffc940],
+  ["Blue", 0x5b8cff], ["Orange", 0xff9b3d],
+];
+const EYES = ["Glasses", "Glowing visor", "Block eyes", "Eye patch", "Shades"];
+const HATS = ["Fedora", "Cap", "Propeller", "Antennas", "Mohawk", "Top hat", "Headphones", "Beanie", "None"];
+const GEAR = ["Backpack", "Chest plate", "Scarf", "None"];
+const BG = [
+  ["Mint", 0xdfeee8], ["Sand", 0xe8e2d4], ["Sky", 0xd6e3ee], ["Lilac", 0xe9dcef],
+  ["Sage", 0xd8e7cf], ["Peach", 0xf1e1d2], ["Night", 0x1d2330],
+];
+const ADJ = ["Quant", "Diamond-Hand", "Late-Night", "Degen", "Bullish", "Chart-Reading", "Zen", "Alpha"];
+const ROLE = {
+  Fedora: "Hatter", Cap: "Scalper", Propeller: "Tinkerer", Antennas: "Receiver", Mohawk: "Punk",
+  "Top hat": "Tycoon", Headphones: "Tape Reader", Beanie: "Builder", None: "viber",
+};
+const FLAVOR = {
+  Hatter: "Fedora on, spreadsheets open. Reads the tape so you don't have to.",
+  Scalper: "In and out before the candle closes.",
+  Tinkerer: "Builds bots at 3 a.m. Some of them even work.",
+  Receiver: "Picks up signal from three chains away.",
+  Punk: "Doesn't follow the trend. Front-runs it.",
+  Tycoon: "Owns a little bit of every basket.",
+  "Tape Reader": "Listens to the order book like it's a mixtape.",
+  Builder: "Ships on testnet, sleeps on mainnet.",
+  viber: "Just here for the vibes.",
+};
+const KEYS = ["body", "accent", "eyes", "eyeColor", "hat", "hatColor", "gear", "bg", "adj", "level"];
+const LIMITS = [BODY.length, ACCENT.length, EYES.length, ACCENT.length, HATS.length, ACCENT.length, GEAR.length, BG.length, ADJ.length, 21];
+
+// office-viber inspired default
+const DEFAULT = { body: 0, accent: 0, eyes: 0, eyeColor: 1, hat: 0, hatColor: 0, gear: 0, bg: 0, adj: 0, level: 7 };
+
+function encodeDNA(d) {
+  return "0x" + KEYS.map((k) => d[k].toString(16).padStart(2, "0")).join("");
+}
+function decodeDNA(hex) {
+  const m = /^0x([0-9a-f]{20})$/i.exec(hex || "");
+  if (!m) return null;
+  const d = {};
+  for (let i = 0; i < KEYS.length; i++) {
+    const v = parseInt(m[1].slice(i * 2, i * 2 + 2), 16);
+    if (v >= LIMITS[i]) return null;
+    d[KEYS[i]] = v;
+  }
+  if (d.level < 1) return null;
+  return d;
+}
+let dna = decodeDNA(location.hash.slice(1)) || { ...DEFAULT };
+
+// ---------- renderer / scene ----------
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+stage.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
+camera.position.set(7, 5.2, 9);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 2.75, 0);
+controls.enableDamping = true;
+controls.enablePan = false;
+controls.minZoom = 0.6; controls.maxZoom = 2.2;
+controls.maxPolarAngle = Math.PI * 0.62;
+controls.autoRotate = true; controls.autoRotateSpeed = 1.6;
+renderer.domElement.addEventListener("pointerdown", () => (controls.autoRotate = false));
+
+scene.add(new THREE.AmbientLight(0xffffff, 1.35));
+const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+sun.position.set(-4, 9, 6);
+scene.add(sun);
+const rim = new THREE.DirectionalLight(0xffffff, 0.6);
+rim.position.set(6, 3, -5);
+scene.add(rim);
+
+// 3-step toon ramp -> flat, poster-like faces like the 2D art
+const ramp = new THREE.DataTexture(new Uint8Array([90, 90, 90, 255, 170, 170, 170, 255, 255, 255, 255, 255]), 3, 1);
+ramp.minFilter = ramp.magFilter = THREE.NearestFilter;
+ramp.needsUpdate = true;
+
+const OUTLINE = new THREE.MeshBasicMaterial({ color: 0x141414, side: THREE.BackSide });
+const T = 0.09; // outline thickness
+
+function toon(color, emissive = 0) {
+  return new THREE.MeshToonMaterial({ color, gradientMap: ramp, emissive, emissiveIntensity: emissive ? 1 : 0 });
+}
+function glass(color) {
+  return new THREE.MeshToonMaterial({ color, gradientMap: ramp, transparent: true, opacity: 0.55, emissive: color, emissiveIntensity: 0.25, depthWrite: false });
+}
+const GLASS_OUTLINE = new THREE.MeshBasicMaterial({ color: 0x2fc9b6, side: THREE.BackSide });
+
+// a box with a thick inverted-hull outline, positioned by its center
+function box(parent, w, h, d, color, x, y, z, opts = {}) {
+  const g = new THREE.Group();
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), opts.material || toon(color, opts.emissive));
+  const o = new THREE.Mesh(new THREE.BoxGeometry(w + T, h + T, d + T), opts.outline || OUTLINE);
+  g.add(o, m);
+  g.position.set(x, y, z);
+  parent.add(g);
+  return g;
+}
+const shade = (hex, k) => new THREE.Color(hex).multiplyScalar(k).getHex();
+
+// ---------- character ----------
+let viber, parts = {};
+function buildViber(d) {
+  if (viber) scene.remove(viber);
+  viber = new THREE.Group();
+  parts = {};
+  const isGlass = d.body === GLASS;
+  const bodyC = BODY[d.body][1];
+  const acc = ACCENT[d.accent][1];
+  const eyeC = ACCENT[d.eyeColor][1];
+  const hatC = ACCENT[d.hatColor][1];
+  const B = isGlass ? { material: glass(bodyC), outline: GLASS_OUTLINE } : {};
+
+  const root = new THREE.Group();
+  viber.add(root);
+  parts.root = root;
+
+  // legs + boots
+  for (const s of [-1, 1]) {
+    box(root, 0.62, 0.3, 0.82, acc, s * 0.4, 0.15, 0.1);
+    box(root, 0.5, 0.5, 0.55, bodyC, s * 0.4, 0.55, 0, B);
+  }
+  box(root, 1.5, 1.1, 1.05, bodyC, 0, 1.33, 0, B);
+  // arms (pivot at shoulder so they can wave)
+  parts.arms = [];
+  for (const s of [-1, 1]) {
+    const pivot = new THREE.Group();
+    pivot.position.set(s * 0.97, 1.78, 0);
+    box(pivot, 0.36, 0.8, 0.46, bodyC, 0, -0.4, 0, B);
+    box(pivot, 0.42, 0.34, 0.52, acc, 0, -0.9, 0.02);
+    root.add(pivot);
+    parts.arms.push(pivot);
+  }
+  // gear
+  const gear = GEAR[d.gear];
+  if (gear === "Backpack") {
+    box(root, 1.0, 0.95, 0.5, 0x45484e, 0, 1.4, -0.8);
+    box(root, 0.7, 0.3, 0.2, 0x5b5f66, 0, 1.2, -1.1);
+  } else if (gear === "Chest plate") {
+    box(root, 0.95, 0.4, 0.1, acc, 0, 1.45, 0.58);
+  } else if (gear === "Scarf") {
+    box(root, 1.6, 0.3, 1.15, acc, 0, 1.78, 0);
+    box(root, 0.34, 0.7, 0.14, acc, 0.4, 1.4, 0.6);
+  }
+
+  // head
+  const head = new THREE.Group();
+  head.position.set(0, 1.9, 0);
+  root.add(head);
+  parts.head = head;
+  box(head, 2.1, 1.75, 1.7, bodyC, 0, 0.875, 0, B);
+
+  const fz = 0.85; // front face z
+  const eyes = EYES[d.eyes];
+  parts.lenses = [];
+  if (eyes === "Glasses") {
+    box(head, 2.16, 0.2, 0.14, 0x1b1c1e, 0, 1.3, fz + 0.06);
+    for (const s of [-1, 1]) {
+      box(head, 0.82, 0.66, 0.1, eyeC, s * 0.46, 0.88, fz + 0.05);
+      parts.lenses.push(box(head, 0.46, 0.4, 0.08, 0xe8e4da, s * 0.46, 0.88, fz + 0.11));
+    }
+    box(head, 0.16, 0.26, 0.12, 0x1b1c1e, 0, 0.72, fz + 0.08);
+  } else if (eyes === "Glowing visor") {
+    box(head, 2.16, 0.62, 0.12, 0x1b1c1e, 0, 0.95, fz + 0.06);
+    for (const s of [-1, 1]) parts.lenses.push(box(head, 0.5, 0.26, 0.08, eyeC, s * 0.46, 0.95, fz + 0.13, { emissive: eyeC }));
+  } else if (eyes === "Block eyes") {
+    for (const s of [-1, 1]) {
+      box(head, 0.62, 0.6, 0.1, 0x1b1c1e, s * 0.45, 0.95, fz + 0.05);
+      parts.lenses.push(box(head, 0.26, 0.26, 0.08, eyeC, s * 0.45 + 0.08, 0.9, fz + 0.11, { emissive: eyeC }));
+    }
+  } else if (eyes === "Eye patch") {
+    box(head, 0.7, 0.66, 0.1, eyeC, -0.46, 0.92, fz + 0.05);
+    parts.lenses.push(box(head, 0.36, 0.36, 0.08, 0xe8e4da, -0.46, 0.92, fz + 0.11));
+    box(head, 0.5, 0.5, 0.1, 0x1b1c1e, 0.5, 0.92, fz + 0.05);
+    box(head, 2.16, 0.12, 0.12, 0x1b1c1e, 0, 1.28, fz + 0.04);
+  } else { // shades
+    box(head, 2.2, 0.16, 0.12, eyeC, 0, 1.12, fz + 0.06);
+    for (const s of [-1, 1]) parts.lenses.push(box(head, 0.8, 0.46, 0.1, 0x16181b, s * 0.46, 0.86, fz + 0.07));
+  }
+
+  // headwear
+  const top = 1.75;
+  const hat = HATS[d.hat];
+  parts.prop = null;
+  if (hat === "Fedora") {
+    box(head, 2.75, 0.2, 2.3, hatC, 0, top + 0.1, 0);
+    box(head, 1.75, 0.62, 1.45, hatC, 0, top + 0.51, 0);
+    box(head, 1.78, 0.14, 1.48, shade(hatC, 0.55), 0, top + 0.27, 0);
+  } else if (hat === "Cap") {
+    box(head, 2.16, 0.5, 1.76, hatC, 0, top + 0.25, 0);
+    box(head, 1.6, 0.12, 0.8, hatC, 0, top + 0.06, 1.2);
+  } else if (hat === "Propeller") {
+    box(head, 2.16, 0.36, 1.76, hatC, 0, top + 0.18, 0);
+    box(head, 0.14, 0.4, 0.14, 0x1b1c1e, 0, top + 0.56, 0);
+    const prop = new THREE.Group();
+    prop.position.set(0, top + 0.78, 0);
+    box(prop, 1.6, 0.06, 0.26, ACCENT[(d.hatColor + 3) % ACCENT.length][1], 0, 0, 0);
+    head.add(prop);
+    parts.prop = prop;
+  } else if (hat === "Antennas") {
+    for (const s of [-1, 1]) {
+      box(head, 0.2, 0.62, 0.2, shade(bodyC, 0.8), s * 0.62, top + 0.31, 0);
+      box(head, 0.32, 0.32, 0.32, hatC, s * 0.62, top + 0.72, 0, { emissive: hatC });
+    }
+  } else if (hat === "Mohawk") {
+    [0.5, 0.95, 1.2, 0.8].forEach((h, i) => box(head, 0.22, h, 0.22, hatC, 0, top + h / 2, 0.55 - i * 0.37));
+  } else if (hat === "Top hat") {
+    box(head, 2.4, 0.16, 2.0, 0x1b1c1e, 0, top + 0.08, 0);
+    box(head, 1.4, 1.1, 1.2, 0x1b1c1e, 0, top + 0.71, 0);
+    box(head, 1.43, 0.2, 1.23, hatC, 0, top + 0.3, 0);
+  } else if (hat === "Headphones") {
+    box(head, 0.26, 0.3, 0.5, 0x1b1c1e, -1.05, top + 0.12, 0);
+    box(head, 0.26, 0.3, 0.5, 0x1b1c1e, 1.05, top + 0.12, 0);
+    box(head, 2.4, 0.18, 0.4, 0x1b1c1e, 0, top + 0.28, 0);
+    for (const s of [-1, 1]) box(head, 0.3, 0.8, 0.8, hatC, s * 1.2, 0.9, 0);
+  } else if (hat === "Beanie") {
+    box(head, 2.2, 0.3, 1.8, shade(hatC, 0.75), 0, top + 0.05, 0);
+    box(head, 2.0, 0.5, 1.6, hatC, 0, top + 0.45, 0);
+    box(head, 0.4, 0.3, 0.4, shade(hatC, 0.75), 0, top + 0.85, 0);
+  }
+
+  scene.add(viber);
+  buildAura(d.level);
+  buildScreens();
+}
+
+// ---------- level aura: pedestal + ring + orbiting coins + sparkles ----------
+let aura;
+const coinMat = toon(0xffc940, 0x6b4a00);
+function buildAura(level) {
+  if (aura) viber.remove(aura);
+  aura = new THREE.Group();
+  const t = (level - 1) / 19;
+  const gold = level >= 15;
+  const col = gold ? 0xffc940 : 0xd4ff3a;
+
+  box(aura, 3.4, 0.28, 3.4, 0x23261f, 0, -0.14, 0);
+  box(aura, 3.0, 0.08, 3.0, gold ? 0x8a6a10 : 0x3a4a14, 0, 0.04, 0);
+
+  const ringMat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
+  const ring = new THREE.Mesh(new THREE.RingGeometry(1.7, 1.8 + t * 0.35, 64), ringMat);
+  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.1;
+  aura.add(ring);
+  aura.userData.ring = ring;
+
+  const coins = new THREE.Group();
+  const n = Math.max(1, Math.ceil(level / 2));
+  for (let i = 0; i < n; i++) {
+    const c = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.07, 20), coinMat);
+    const oc = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.1, 20), OUTLINE);
+    const g = new THREE.Group(); g.add(oc, c);
+    g.rotation.x = Math.PI / 2;
+    g.userData = { a: (i / n) * Math.PI * 2, r: 2.2 + (i % 2) * 0.35, y: 1.2 + (i % 3) * 0.9 };
+    coins.add(g);
+  }
+  aura.add(coins);
+  aura.userData.coins = coins;
+
+  const count = Math.round(20 + t * 160);
+  const pos = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2, r = 1.6 + Math.random() * 1.6;
+    pos.set([Math.cos(a) * r, Math.random() * 5, Math.sin(a) * r], i * 3);
+  }
+  const pg = new THREE.BufferGeometry();
+  pg.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  const pts = new THREE.Points(pg, new THREE.PointsMaterial({ color: col, size: 0.07 + t * 0.06, transparent: true, opacity: 0.9 }));
+  aura.add(pts);
+  aura.userData.pts = pts;
+
+  if (level === 20) {
+    const crown = new THREE.Group();
+    box(crown, 1.2, 0.3, 1.2, 0xffc940, 0, 0, 0, { emissive: 0x5a3c00 });
+    for (const [x, z] of [[-0.45, -0.45], [0.45, -0.45], [-0.45, 0.45], [0.45, 0.45]]) box(crown, 0.22, 0.34, 0.22, 0xffc940, x, 0.3, z, { emissive: 0x5a3c00 });
+    crown.position.y = 5.4;
+    aura.add(crown);
+    aura.userData.crown = crown;
+  }
+  viber.add(aura);
+
+  document.getElementById("lvlBadge").classList.toggle("gold", gold);
+  document.getElementById("lvlBadgeNum").textContent = level;
+}
+
+// ---------- quant mode: floating candle-chart screens ----------
+let screens;
+function chartTexture(seed) {
+  const c = document.createElement("canvas"); c.width = 256; c.height = 160;
+  const g = c.getContext("2d");
+  g.fillStyle = "#0e1a12"; g.fillRect(0, 0, 256, 160);
+  g.strokeStyle = "#1f3a26"; g.lineWidth = 1;
+  for (let x = 0; x < 256; x += 32) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 160); g.stroke(); }
+  for (let y = 0; y < 160; y += 32) { g.beginPath(); g.moveTo(0, y); g.lineTo(256, y); g.stroke(); }
+  let v = 90, r = seed;
+  const rand = () => (r = (r * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < 16; i++) {
+    const o = v, cl = v + (rand() - 0.42) * 26;
+    const hi = Math.min(o, cl) - rand() * 10, lo = Math.max(o, cl) + rand() * 10;
+    g.fillStyle = g.strokeStyle = cl < o ? "#5dff7a" : "#ff5d6c";
+    const x = 10 + i * 15;
+    g.beginPath(); g.moveTo(x + 4, hi); g.lineTo(x + 4, lo); g.stroke();
+    g.fillRect(x, Math.min(o, cl), 9, Math.max(3, Math.abs(cl - o)));
+    v = Math.max(25, Math.min(140, cl));
+  }
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+const chartTex = [7, 138, 269].map(chartTexture);
+function buildScreens() {
+  screens = new THREE.Group();
+  chartTex.forEach((tex, i) => {
+    const g = new THREE.Group();
+    box(g, 1.3, 0.85, 0.1, 0x8c9096, 0, 0, 0);
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(1.14, 0.7), new THREE.MeshBasicMaterial({ map: tex }));
+    screen.position.z = 0.06;
+    g.add(screen);
+    g.userData.a = (i / 3) * Math.PI * 2;
+    screens.add(g);
+  });
+  screens.visible = anim === "quant";
+  viber.add(screens);
+}
+
+// ---------- animation (pure function of t so GIF export loops cleanly; loop period = PI) ----------
+let anim = "idle";
+const pointer = new THREE.Vector2();
+function pose(t, live = true) {
+  const { root, head, arms, lenses } = parts;
+  const [L, R] = arms;
+  root.position.set(0, 0, 0); root.rotation.set(0, 0, 0);
+  L.rotation.set(0, 0, 0); R.rotation.set(0, 0, 0);
+
+  if (anim === "idle" || anim === "quant") {
+    root.position.y = Math.abs(Math.sin(t * 2)) * 0.06;
+    L.rotation.x = Math.sin(t * 2) * 0.12; R.rotation.x = -Math.sin(t * 2) * 0.12;
+  } else if (anim === "wave") {
+    root.position.y = Math.abs(Math.sin(t * 2)) * 0.04;
+    R.rotation.z = 2.6 + Math.sin(t * 10) * 0.35;
+    root.rotation.z = Math.sin(t * 4) * 0.03;
+  } else if (anim === "dance") {
+    const b = t * 8;
+    root.position.y = Math.abs(Math.sin(b)) * 0.45;
+    root.rotation.y = Math.sin(b / 2) * 0.5;
+    root.rotation.z = Math.sin(b) * 0.08;
+    L.rotation.z = -2.2 - Math.sin(b) * 0.6; R.rotation.z = 2.2 - Math.sin(b) * 0.6;
+  }
+  if (live) {
+    head.rotation.y += ((pointer.x * 0.45) - head.rotation.y) * 0.08;
+    head.rotation.x += ((-pointer.y * 0.18) - head.rotation.x) * 0.08;
+    const blink = (t % 3.6) < 0.12 ? 0.12 : 1;
+    lenses.forEach((l) => (l.scale.y = blink));
+  } else {
+    head.rotation.set(0, 0, 0);
+    lenses.forEach((l) => (l.scale.y = 1));
+  }
+  if (parts.prop) parts.prop.rotation.y = t * 14;
+
+  aura.userData.coins.children.forEach((c, i) => {
+    const u = c.userData, a = u.a + t * 2;
+    c.position.set(Math.cos(a) * u.r, u.y + Math.sin(t * 2 + i) * 0.15, Math.sin(a) * u.r);
+    c.rotation.z = t * 4 + i;
+  });
+  aura.userData.pts.rotation.y = t * 0.5;
+  aura.userData.ring.material.opacity = 0.35 + Math.sin(t * 4) * 0.15 + (dna.level / 20) * 0.4;
+  if (aura.userData.crown) { aura.userData.crown.rotation.y = t * 2; aura.userData.crown.position.y = 5.4 + Math.sin(t * 2) * 0.1; }
+
+  if (screens.visible) {
+    screens.children.forEach((s) => {
+      const a = s.userData.a + t * 2;
+      s.position.set(Math.cos(a) * 2.6, 3.2 + Math.sin(t * 2 + s.userData.a) * 0.2, Math.sin(a) * 2.6);
+      s.lookAt(0, 3.2, 0); s.rotateY(Math.PI);
+    });
+  }
+}
+
+// ---------- UI ----------
+const $ = (id) => document.getElementById(id);
+const hex = (n) => "#" + n.toString(16).padStart(6, "0");
+function toast(msg) {
+  const el = $("toast"); el.textContent = msg; el.classList.add("show");
+  clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("show"), 1800);
+}
+const nameOf = (d) => `${ADJ[d.adj]} ${ROLE[HATS[d.hat]]}`;
+
+const GROUPS = [
+  { key: "body", label: "Body", swatch: BODY },
+  { key: "accent", label: "Boots & hands", swatch: ACCENT },
+  { key: "eyes", label: "Eyes", text: EYES },
+  { key: "eyeColor", label: "Eye color", swatch: ACCENT },
+  { key: "hat", label: "Headwear", text: HATS },
+  { key: "hatColor", label: "Headwear color", swatch: ACCENT },
+  { key: "gear", label: "Gear", text: GEAR },
+  { key: "bg", label: "Background", swatch: BG },
+  { key: "adj", label: "Title", text: ADJ },
+];
+function buildEditor() {
+  $("editor").innerHTML = GROUPS.map((g) => {
+    const items = g.swatch
+      ? g.swatch.map(([n, c], i) => `<button class="chip sw${n === "Glass" ? " glass" : ""}" data-k="${g.key}" data-i="${i}" title="${n}" aria-label="${g.label}: ${n}" style="background:${hex(c)}"></button>`)
+      : g.text.map((n, i) => `<button class="chip" data-k="${g.key}" data-i="${i}">${n}</button>`);
+    return `<div class="group"><div class="group-head"><div class="eyebrow">${g.label}</div><span id="val-${g.key}"></span></div><div class="chips">${items.join("")}</div></div>`;
+  }).join("");
+}
+function syncEditor() {
+  document.querySelectorAll("#editor .chip").forEach((b) => b.classList.toggle("on", dna[b.dataset.k] === +b.dataset.i));
+  for (const g of GROUPS) {
+    const v = g.swatch ? g.swatch[dna[g.key]][0] : g.text[dna[g.key]];
+    $("val-" + g.key).textContent = v;
+  }
+}
+function attributes(d) {
+  return [
+    { trait_type: "Body", value: BODY[d.body][0] },
+    { trait_type: "Boots & hands", value: ACCENT[d.accent][0] },
+    { trait_type: "Eyes", value: `${ACCENT[d.eyeColor][0]} ${EYES[d.eyes].toLowerCase()}` },
+    { trait_type: "Headwear", value: HATS[d.hat] === "None" ? "None" : `${ACCENT[d.hatColor][0]} ${HATS[d.hat].toLowerCase()}` },
+    { trait_type: "Gear", value: GEAR[d.gear] },
+    { trait_type: "Background", value: BG[d.bg][0] },
+    { trait_type: "Level", value: d.level, max_value: 20, display_type: "number" },
+  ];
+}
+function renderInfo() {
+  const role = ROLE[HATS[dna.hat]];
+  const dnaHex = encodeDNA(dna);
+  $("name").textContent = nameOf(dna);
+  $("flavor").textContent = FLAVOR[role];
+  $("dna").textContent = dnaHex;
+  $("meta").textContent = JSON.stringify({
+    name: `Forge Pass #<tokenId> · ${nameOf(dna)}`,
+    description: FLAVOR[role],
+    image: `<forge-site>/render/${dnaHex}.png`,
+    animation_url: `<forge-site>/#${dnaHex}`,
+    attributes: attributes(dna),
+    dna: dnaHex,
+  }, null, 2);
+  scene.background = new THREE.Color(BG[dna.bg][1]);
+  $("lvl").value = dna.level; $("lvlOut").textContent = `LVL ${dna.level}`;
+  history.replaceState(null, "", "#" + dnaHex);
+  syncEditor();
+}
+function update(rebuild = true) {
+  if (rebuild) buildViber(dna);
+  renderInfo();
+}
+
+$("editor").addEventListener("click", (e) => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  dna[b.dataset.k] = +b.dataset.i;
+  update(b.dataset.k !== "bg" && b.dataset.k !== "adj");
+});
+$("anims").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  anim = b.dataset.anim;
+  [...$("anims").children].forEach((x) => x.classList.toggle("on", x === b));
+  screens.visible = anim === "quant";
+});
+$("lvl").addEventListener("input", (e) => {
+  dna.level = +e.target.value;
+  buildAura(dna.level);
+  renderInfo();
+});
+const ri = (n) => Math.floor(Math.random() * n);
+$("reroll").addEventListener("click", () => {
+  dna = {
+    body: ri(BODY.length), accent: ri(ACCENT.length), eyes: ri(EYES.length), eyeColor: ri(ACCENT.length),
+    hat: ri(HATS.length), hatColor: ri(ACCENT.length), gear: ri(GEAR.length),
+    bg: ri(BG.length - 1), adj: ri(ADJ.length), level: 1 + ri(20),
+  };
+  if (ACCENT[dna.eyeColor][1] === BODY[dna.body][1]) dna.eyeColor = (dna.eyeColor + 2) % ACCENT.length;
+  update();
+});
+
+const shareURL = () => location.href.split("#")[0] + "#" + encodeDNA(dna);
+$("share").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(shareURL()); toast("Link copied: it rebuilds this exact viber"); }
+  catch { prompt("Copy this link:", shareURL()); }
+});
+$("tweet").addEventListener("click", () => {
+  const text = `Just forged my viber in 3D: ${nameOf(dna)}, LVL ${dna.level} 🧊\n\nMake yours 👇`;
+  window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareURL())}`, "_blank", "noopener");
+});
+
+// ---------- exports ----------
+function watermark(g, size) {
+  const dark = BG[dna.bg][0] !== "Night";
+  g.font = `600 ${Math.round(size * 0.028)}px "JetBrains Mono", monospace`;
+  g.fillStyle = dark ? "rgba(12,14,11,.55)" : "rgba(238,240,230,.6)";
+  g.textAlign = "right";
+  g.fillText("vibe/forge", size - size * 0.03, size - size * 0.03);
+  g.textAlign = "left";
+  g.fillText(`LVL ${dna.level}`, size * 0.03, size - size * 0.03);
+}
+function withSquareRender(size, fn) {
+  const prevPR = renderer.getPixelRatio();
+  const prevAuto = controls.autoRotate;
+  controls.autoRotate = false;
+  renderer.setPixelRatio(1);
+  renderer.setSize(size, size, false);
+  setCamera(1);
+  return Promise.resolve(fn()).finally(() => {
+    renderer.setPixelRatio(prevPR);
+    controls.autoRotate = prevAuto;
+    resize();
+  });
+}
+function download(href, name) {
+  const a = document.createElement("a"); a.href = href; a.download = name; a.click();
+}
+$("png").addEventListener("click", () => withSquareRender(1080, () => {
+  pose(clock.getElapsedTime(), false);
+  renderer.render(scene, camera);
+  const c = document.createElement("canvas"); c.width = c.height = 1080;
+  const g = c.getContext("2d");
+  g.drawImage(renderer.domElement, 0, 0, 1080, 1080);
+  watermark(g, 1080);
+  download(c.toDataURL("image/png"), `viber-${encodeDNA(dna).slice(2)}.png`);
+  toast("PFP saved");
+}));
+$("gif").addEventListener("click", async (e) => {
+  const btn = e.currentTarget;
+  btn.disabled = true;
+  running = false;
+  const size = 420, N = 48, delay = Math.round((Math.PI / N) * 1000);
+  try {
+    await withSquareRender(size, async () => {
+      const c = document.createElement("canvas"); c.width = c.height = size;
+      const g = c.getContext("2d", { willReadFrequently: true });
+      const enc = GIFEncoder();
+      const base = viber.rotation.y;
+      for (let i = 0; i < N; i++) {
+        const f = i / N;
+        viber.rotation.y = base + f * Math.PI * 2;
+        pose(f * Math.PI, false);
+        renderer.render(scene, camera);
+        g.drawImage(renderer.domElement, 0, 0, size, size);
+        watermark(g, size);
+        const { data } = g.getImageData(0, 0, size, size);
+        const palette = quantize(data, 256);
+        enc.writeFrame(applyPalette(data, palette), size, size, { palette, delay });
+        btn.textContent = `Rendering ${Math.round(((i + 1) / N) * 100)}%`;
+        if (i % 4 === 3) await new Promise((r) => setTimeout(r));
+      }
+      viber.rotation.y = base;
+      enc.finish();
+      const url = URL.createObjectURL(new Blob([enc.bytes()], { type: "image/gif" }));
+      download(url, `viber-${encodeDNA(dna).slice(2)}.gif`);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+    });
+    toast("GIF saved");
+  } finally {
+    btn.disabled = false; btn.textContent = "GIF 360°";
+    running = true; requestAnimationFrame(tick);
+  }
+});
+
+stage.addEventListener("pointermove", (e) => {
+  const r = stage.getBoundingClientRect();
+  pointer.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+});
+
+// ---------- resize ----------
+function setCamera(aspect) {
+  const view = 3.8;
+  camera.left = -view * aspect; camera.right = view * aspect; camera.top = view; camera.bottom = -view;
+  camera.updateProjectionMatrix();
+}
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h, false);
+  setCamera(w / h);
+}
+new ResizeObserver(resize).observe(stage);
+
+// ---------- loop ----------
+const clock = new THREE.Clock();
+let running = true;
+function tick() {
+  if (!running) return;
+  pose(clock.getElapsedTime());
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+
+buildEditor();
+update();
+resize();
+tick();
+</script>
+</body>
+</html>
