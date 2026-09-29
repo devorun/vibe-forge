@@ -1,6 +1,8 @@
 # vibe/forge
 
-Forge your viber in 3D. A fan-made character studio for the [vibe/vibe](https://testnet.vibevibe.fun) community, inspired by the vibe vibers collection.
+Forge your viber in 3D: **https://vibe-forge-3d.vercel.app**
+
+A fan-made character studio for the [vibe/vibe](https://testnet.vibevibe.fun) community, inspired by the vibe vibers collection.
 
 - Mix traits: body (incl. a translucent Glass body), eyes, headwear, gear, background
 - Animations: idle, wave, dance, quant mode (floating candle-chart screens)
