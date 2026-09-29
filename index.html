@@ -36,6 +36,8 @@
     color: var(--muted); border: 1px solid var(--line); padding: 7px 10px; border-radius: 999px; text-decoration: none;
   }
   a.tag:hover { border-color: var(--line-hi); color: var(--text); }
+  a.tag.token { color: var(--lime); border-color: #d4ff3a55; }
+  a.tag.token:hover { border-color: var(--lime); color: var(--lime); }
   .hero { max-width: 1320px; margin: 0 auto; padding: 22px 24px 0; }
   .hero h2 { margin: 0; font-size: clamp(26px, 4vw, 40px); letter-spacing: -0.035em; line-height: 1.05; }
   .hero h2 em { font-style: normal; color: var(--lime); }
@@ -124,6 +126,7 @@
 <header>
   <a class="brand" href="./">vibe<span>/</span>forge</a>
   <nav class="nav">
+    <a class="tag token" href="https://testnet.vibevibe.fun/token/0xDB5276bB71BF71219F265A71104fea9BF7fd2423" target="_blank" rel="noopener">$FORGE ↗</a>
     <a class="tag hide-sm" href="https://testnet.vibevibe.fun/vibe-vibers" target="_blank" rel="noopener">vibe vibers ↗</a>
     <span class="tag">Fan-made</span>
   </nav>
@@ -187,6 +190,8 @@
 </main>
 
 <footer>
+  <a href="https://testnet.vibevibe.fun/token/0xDB5276bB71BF71219F265A71104fea9BF7fd2423" target="_blank" rel="noopener">$FORGE on vibe/vibe testnet</a> ·
+  <a href="https://x.com/Devran1an" target="_blank" rel="noopener">@Devran1an</a><br>
   Fan-made by the community for vibe/vibe. Not affiliated with or endorsed by the vibe/vibe team. Character style inspired by the vibe vibers collection.
   Testnet only: nothing here has monetary value.
 </footer>
@@ -697,7 +702,7 @@ $("share").addEventListener("click", async () => {
   catch { prompt("Copy this link:", shareURL()); }
 });
 $("tweet").addEventListener("click", () => {
-  const text = `Just forged my viber in 3D: ${nameOf(dna)}, LVL ${dna.level} 🧊\n\nMake yours 👇`;
+  const text = `just forged my viber in 3D: ${nameOf(dna)}, LVL ${dna.level} 🧊\n\nmake yours on vibe forge for @vibevibefun 👇`;
   window.open(`https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareURL())}`, "_blank", "noopener");
 });
 

@@ -2,6 +2,8 @@
 
 Forge your viber in 3D: **https://vibe-forge-3d.vercel.app**
 
+Token: [$FORGE on vibe/vibe testnet](https://testnet.vibevibe.fun/token/0xDB5276bB71BF71219F265A71104fea9BF7fd2423) · by [@Devran1an](https://x.com/Devran1an)
+
 A fan-made character studio for the [vibe/vibe](https://testnet.vibevibe.fun) community, inspired by the vibe vibers collection.
 
 - Mix traits: body (incl. a translucent Glass body), eyes, headwear, gear, background
